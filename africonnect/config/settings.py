@@ -185,7 +185,7 @@ X_FRAME_OPTIONS = 'DENY'
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.Argon2PasswordHasher',
-    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
-]
+## PASSWORD_HASHERS = [
+##    'django.contrib.auth.hashers.Argon2PasswordHasher',
+##    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+##]

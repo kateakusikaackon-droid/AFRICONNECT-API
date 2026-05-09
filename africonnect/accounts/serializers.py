@@ -51,5 +51,22 @@ class CustomTokenSerializer(TokenObtainPairSerializer):
     
     
     
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField(
+        required=True,
+        help_text="Refresh token to blacklist"
+    )   
     
 
+
+
+
+
+class DashboardSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+    profile = serializers.DictField()
+
+    products = serializers.DictField()
+
+    
