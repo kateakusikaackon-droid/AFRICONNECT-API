@@ -1,1 +1,1 @@
-web: gunicorn africonnect.wsgi:application
+gunicorn africonnect.wsgi:application

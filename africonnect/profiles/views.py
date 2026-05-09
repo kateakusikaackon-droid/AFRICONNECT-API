@@ -10,27 +10,31 @@ from .serializers import SupplierProfileSerializer
 
 class SupplierProfileView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = SupplierProfileSerializer
 
     @extend_schema(responses=SupplierProfileSerializer)
     def get(self, request):
         try:
             profile = SupplierProfile.objects.get(user=request.user)
+            
         except SupplierProfile.DoesNotExist:
             return Response(
                 {"detail": "Profile not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = SupplierProfileSerializer(profile)
+        serializer =  self.serializer_class(profile)
+        
         return Response({
             "message": "Profile retrieved successfully",
             "profile": serializer.data
-        })
-    @extend_schema(request=SupplierProfileSerializer)
+        }, status=status.HTTP_200_OK)
+        
+    @extend_schema(request=SupplierProfileSerializer, responses=SupplierProfileSerializer)
     def put(self, request):
         profile, created = SupplierProfile.objects.get_or_create(user=request.user)
 
-        serializer = SupplierProfileSerializer(
+        serializer =self.serializer_class(
             profile,
             data=request.data,
             partial=True
@@ -41,6 +45,6 @@ class SupplierProfileView(APIView):
             return Response({
                 "message": "Profile updated successfully",
                 "profile": serializer.data
-            })
+            }, status=status.HTTP_200_OK)
             
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

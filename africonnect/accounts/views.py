@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from .permissions import IsSupplier
 from rest_framework.permissions import BasePermission
 from rest_framework.views import APIView
@@ -11,8 +10,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .serializers import UserRegisterSerializer, CustomTokenSerializer
+from .serializers import (UserRegisterSerializer, CustomTokenSerializer, LogoutSerializer, DashboardSerializer)
 
+from profiles.models import SupplierProfile
+from products.models import Product
 
 @extend_schema(
     request=UserRegisterSerializer,
@@ -22,11 +23,11 @@ from .serializers import UserRegisterSerializer, CustomTokenSerializer
 
 class UserRegisterView(APIView):
     permission_classes = [AllowAny]
-
+    serializer_class = UserRegisterSerializer
     @extend_schema(request=UserRegisterSerializer)
     def post(self, request):
         
-        serializer = UserRegisterSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
             user = serializer.save()
@@ -60,7 +61,7 @@ class LoginView(TokenObtainPairView):
     
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
-
+    serializer_class = LogoutSerializer
     def post(self, request):
         refresh_token = request.data.get("refresh")
 
@@ -80,12 +81,44 @@ class LogoutView(APIView):
             
 class SupplierDashboardView(APIView):
     permission_classes = [IsAuthenticated, IsSupplier]
+    serializer_class = DashboardSerializer
+
+    @extend_schema(responses=DashboardSerializer)
     def get(self, request):
-        return Response({
-            "message": "Welcome Supplier"
-        })            
-        
-        
+
+        # PROFILE
+        profile = SupplierProfile.objects.filter(
+            user=request.user
+        ).first()
+
+        # PRODUCTS
+        products = Product.objects.filter(
+            supplier=request.user
+        )
+
+        data = {
+            "message": "Welcome Supplier",
+
+            "profile": {
+                "exists": profile is not None
+            },
+
+            "products": {
+                "total": products.count()
+            },
+        }
+
+        serializer = self.serializer_class(data)
+
+        return Response(
+            {
+                "message": "Dashboard loaded successfully",
+                "data": serializer.data
+            }
+        )
+
+
+
 
 
 

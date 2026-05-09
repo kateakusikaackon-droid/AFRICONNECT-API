@@ -3,18 +3,21 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
-
+from rest_framework import generics
 from .models import Product
 from .serializers import ProductSerializer
 
 
 class ProductListCreateView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = ProductSerializer
 
     @extend_schema(responses=ProductSerializer(many=True))
     def get(self, request):
         products = Product.objects.filter(supplier=request.user)
-        serializer = ProductSerializer(products, many=True)       
+        
+        serializer = self.serializer_class(products, many=True) 
+              
         return Response({
             "message": "Products retrieved successfully",
             "products": serializer.data
@@ -36,6 +39,7 @@ class ProductListCreateView(APIView):
 
 class ProductDetailView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = ProductSerializer
 
     def get_object(self, user, pk):
         try:
@@ -48,9 +52,10 @@ class ProductDetailView(APIView):
         product = self.get_object(request.user, pk)
 
         if not product:
-            return Response({"detail": "Not found"}, status=404)
+            return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = ProductSerializer(product)
+        serializer = self.serializer_class(product)
+
         return Response({
             "message": "Product retrieved successfully",
             "product": serializer.data
@@ -61,24 +66,25 @@ class ProductDetailView(APIView):
         product = self.get_object(request.user, pk)
 
         if not product:
-            return Response({"detail": "Not found"}, status=404)
+            return Response({"detail": "Not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = ProductSerializer(product, data=request.data, partial=True)
+        serializer = self.serializer_class(product,data=request.data,partial=True)
 
         if serializer.is_valid():
             serializer.save()
+            
             return Response({
             "message": "Product updated successfully",
             "product": serializer.data
             })
         
-        return Response(serializer.errors, status=400)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, pk):
         product = self.get_object(request.user, pk)
 
         if not product:
-            return Response({"detail": "Not found"}, status=404)
+            return Response({"detail": "Not found"},  status=status.HTTP_404_NOT_FOUND)
 
         product.delete()
-        return Response({"message": "Deleted successfully"}, status=204)
+        return Response({"message": "Deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
