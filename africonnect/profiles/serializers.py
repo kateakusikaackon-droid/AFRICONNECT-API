@@ -9,9 +9,9 @@ class SupplierProfileSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "user",
-            "contact",
-            "country",
-            "city",
+            "phone_number",
+            "country_region",
+            "gender",
             "image",
             "created_at",
         ]

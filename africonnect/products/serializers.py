@@ -11,6 +11,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "name",
             "description",
             "price",
+            "currency",
+            "unit",
             "moq",
             "country",
             "city",

@@ -20,9 +20,10 @@ env/
 .venv/
 
 # =========================
-# 🗄️ DATABASE (LOCAL ONLY)
+# 📦 STATIC / MEDIA FILES
 # =========================
-db.sqlite3
+staticfiles/
+media/
 
 # =========================
 # 🧾 LOG FILES

@@ -27,25 +27,70 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 
-SECRET_KEY = os.environ["SECRET_KEY"]
-DEBUG = os.getenv("DEBUG", "False") == "True"
 
-import os
+
+#SECRET_KEY = os.environ["SECRET_KEY"]
+#DEBUG = os.getenv("DEBUG", "False") == "True"
+
+
+#import os
+
+#DATABASES = {
+#   "default": {
+#        "ENGINE": os.config("DB_ENGINE", "django.db.backends.postgresql"),
+#       "NAME": os.getenv("DB_NAME", ""),
+#        "USER": os.getenv("DB_USER", ""),
+#        "PASSWORD": os.getenv("DB_PASSWORD", ""),
+#        "HOST": os.getenv("DB_HOST", ""),
+#        "PORT": os.getenv("DB_PORT", ""),
+#    }
+#}
+
+#ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+
+
+#from decouple import config
+
+#SECRET_KEY = config('SECRET_KEY')
+
+#DEBUG = config('DEBUG', cast=bool)
+
+#ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='').split(',')
+
+#DATABASES = {
+#    'default': {
+#        'ENGINE': config('DB_ENGINE'),
+#       'NAME': config('DB_NAME'),
+##       'USER': config('DB_USER'),
+#        'PASSWORD': config('DB_PASSWORD'),
+#        'HOST': config('DB_HOST'),
+#        'PORT': config('DB_PORT'),
+#   }
+#}
+
+
+from decouple import config
+import dj_database_url
+
+SECRET_KEY = config('SECRET_KEY')
+
+DEBUG = config('DEBUG', cast=bool)
+
+ALLOWED_HOSTS = config('ALLOWED_HOSTS').split(',')
 
 DATABASES = {
-    "default": {
-        "ENGINE": os.getenv("DB_ENGINE", "django.db.backends.postgresql"),
-        "NAME": os.getenv("DB_NAME", ""),
-        "USER": os.getenv("DB_USER", ""),
-        "PASSWORD": os.getenv("DB_PASSWORD", ""),
-        "HOST": os.getenv("DB_HOST", ""),
-        "PORT": os.getenv("DB_PORT", ""),
-    }
+    'default': dj_database_url.parse(
+        config('DATABASE_URL'),
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
 
 
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+
+
+
 
 
 # Application definition
@@ -72,6 +117,7 @@ AUTH_USER_MODEL = 'accounts.User'
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

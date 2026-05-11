@@ -1,1 +1,1 @@
-gunicorn africonnect.wsgi:application
+web: cd africonnect && gunicorn config.wsgi:application

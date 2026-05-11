@@ -18,7 +18,8 @@ class Product(models.Model):
 
     price = models.DecimalField(max_digits=10, decimal_places=2)
     moq = models.PositiveIntegerField()
-
+    currency = models.CharField(max_length=3, default="USD")
+    unit = models.CharField(max_length=20, default="ton")
     country = models.CharField(max_length=100)
     city = models.CharField(max_length=100)
 
