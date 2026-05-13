@@ -1,35 +1,54 @@
-from .permissions import IsSupplier
-from rest_framework.permissions import BasePermission
+from .permissions import IsSupplier, IsBuyer
+
+from rest_framework.permissions import (
+    IsAuthenticated,
+    AllowAny
+)
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated, AllowAny 
+
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .serializers import (UserRegisterSerializer, CustomTokenSerializer, LogoutSerializer, DashboardSerializer)
+from .serializers import (
+    UserRegisterSerializer,
+    CustomTokenSerializer,
+    LogoutSerializer,
+    SupplierDashboardSerializer,
+    BuyerDashboardSerializer
+)
 
 from profiles.models import SupplierProfile
 from products.models import Product
 
+
 @extend_schema(
     request=UserRegisterSerializer,
     responses={201: UserRegisterSerializer},
-    description="Supplier registration endpoint (no auth required)"
+    description="User registration endpoint (supplier or buyer)"
 )
-
 class UserRegisterView(APIView):
+
     permission_classes = [AllowAny]
+
     serializer_class = UserRegisterSerializer
+
     @extend_schema(request=UserRegisterSerializer)
-    def post(self, request):
-        
-        serializer = self.serializer_class(data=request.data)
+    def post(self, request, *args, **kwargs):
+
+        serializer = self.serializer_class(
+            data=request.data,
+            context={
+                "role": kwargs.get("role")  # supplier or buyer
+            }
+        )
 
         if serializer.is_valid():
+
             user = serializer.save()
 
             return Response(
@@ -37,7 +56,9 @@ class UserRegisterView(APIView):
                     "message": "User registered successfully",
                     "user": {
                         "email": user.email,
-                        "business_name": user.business_name
+                        "name": user.name,
+                        "role": user.role,
+                        "business_name": user.business_name,
                     }
                 },
                 status=status.HTTP_201_CREATED
@@ -47,43 +68,80 @@ class UserRegisterView(APIView):
 
 
 
-class LoginView(TokenObtainPairView): 
+
+class LoginView(TokenObtainPairView):
+
     serializer_class = CustomTokenSerializer
 
     @extend_schema(
         request=CustomTokenSerializer,
         responses={200: OpenApiResponse(description="JWT tokens returned")},
-        description="Login supplier and return JWT tokens"
+        description="Login and return JWT tokens for supplier or buyer"
     )
     def post(self, request, *args, **kwargs):
-        return super().post(request, *args, **kwargs)
-    
-    
+
+        response = super().post(request, *args, **kwargs)
+
+        # OPTIONAL ENHANCEMENT: attach user info
+        if response.status_code == 200:
+
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+
+            user = User.objects.get(email=request.data.get("email"))
+
+            response.data["user"] = {
+                "id": user.id,
+                "email": user.email,
+                "role": user.role,
+                "name": user.name
+            }
+
+        return response
+
+
+
+
 class LogoutView(APIView):
+
     permission_classes = [IsAuthenticated]
     serializer_class = LogoutSerializer
+
     def post(self, request):
-        refresh_token = request.data.get("refresh")
 
-        if not refresh_token:
-            return Response(
-                {"detail": "Refresh token required"},
-                status=400
-            )
+        serializer = self.serializer_class(data=request.data)
 
-        try:
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response({"detail": "Logout successful"}, status=200)
-        except Exception:
-            return Response({"detail": "Invalid token"}, status=400)
-            
-            
+        if serializer.is_valid():
+
+            refresh_token = serializer.validated_data["refresh"]
+
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+
+                return Response(
+                    {"detail": "Logout successful"},
+                    status=status.HTTP_200_OK
+                )
+
+            except Exception:
+                return Response(
+                    {"detail": "Invalid token"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
 class SupplierDashboardView(APIView):
-    permission_classes = [IsAuthenticated, IsSupplier]
-    serializer_class = DashboardSerializer
 
-    @extend_schema(responses=DashboardSerializer)
+    permission_classes = [IsAuthenticated, IsSupplier]
+
+    serializer_class = SupplierDashboardSerializer
+
+    @extend_schema(responses=SupplierDashboardSerializer)
     def get(self, request):
 
         # PROFILE
@@ -114,7 +172,37 @@ class SupplierDashboardView(APIView):
             {
                 "message": "Dashboard loaded successfully",
                 "data": serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+
+
+class BuyerDashboardView(APIView):
+
+    permission_classes = [IsAuthenticated, IsBuyer]
+
+    serializer_class = BuyerDashboardSerializer
+
+    @extend_schema(responses=BuyerDashboardSerializer)
+    def get(self, request):
+
+        data = {
+            "message": "Welcome Buyer",
+            "profile": {
+                "exists": True
             }
+        }
+
+        serializer = self.serializer_class(data)
+
+        return Response(
+            {
+                "message": "Dashboard loaded successfully",
+                "data": serializer.data
+            },
+            status=status.HTTP_200_OK
         )
 
 
@@ -122,9 +210,5 @@ class SupplierDashboardView(APIView):
 
 
 
-class IsAdmin(BasePermission):
-    def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated and
-            request.user.role == "admin"
-        )
+
+

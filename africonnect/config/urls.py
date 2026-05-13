@@ -15,6 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
@@ -23,23 +24,68 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
 
-    # SUPPLIER
-    path('api/supplier/', include('accounts.urls')),
+    # =====================================
+    # ADMIN
+    # =====================================
+    path(
+        "admin/",
+        admin.site.urls
+    ),
 
-    # PROFILE
-    path('api/profile/', include('profiles.urls')),
+    # =====================================
+    # AUTH / ACCOUNTS
+    # =====================================
+    path(
+        "api/accounts/",
+        include("accounts.urls")
+    ),
 
+    # =====================================
+    # PROFILES
+    # =====================================
+    path(
+        "api/profiles/",
+        include("profiles.urls")
+    ),
+
+    # =====================================
     # PRODUCTS
-    path('api/products/', include('products.urls')),
+    # =====================================
+    path(
+        "api/products/",
+        include("products.urls")
+    ),
 
-    # JWT (ONLY refresh, since login is custom)
-    path('api/supplier/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    # =====================================
+    # JWT
+    # =====================================
+    path(
+        "api/token/refresh/",
+        TokenRefreshView.as_view(),
+        name="token_refresh"
+    ),
 
-    # DOCS
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    # =====================================
+    # API DOCUMENTATION
+    # =====================================
+    path(
+        "api/schema/",
+        SpectacularAPIView.as_view(),
+        name="schema"
+    ),
+
+    path(
+        "api/docs/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui"
+    ),
+
+    path(
+        "api/redoc/",
+        SpectacularRedocView.as_view(url_name="schema"),
+        name="redoc"
+    ),
 ]
-    
